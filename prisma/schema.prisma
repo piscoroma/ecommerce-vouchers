@@ -1,0 +1,79 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Brand {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique @db.VarChar(50)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  voucher   Voucher[]
+}
+
+model Voucher {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique @db.VarChar(150)
+  description  String?        @db.Text
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  brand        Brand          @relation(fields: [idBrand], references: [id])
+  idBrand      Int            @map("id_brand")
+  voucherPrice VoucherPrice[]
+  asset        Asset[]
+  OrderVoucher OrderVoucher[]
+}
+
+model VoucherPrice {
+  voucher   Voucher @relation(fields: [idVoucher], references: [id], onDelete: Cascade)
+  idVoucher Int     @map("id_voucher")
+  price     Int
+  @@id([idVoucher, price])
+}
+
+model Asset {
+  id        Int     @id @default(autoincrement())
+  imageName String  @db.VarChar(30) @map("image_name")
+  imagePath String  @db.VarChar(150) @map("image_path")
+  voucher   Voucher @relation(fields: [idVoucher], references: [id], onDelete: Cascade)
+  idVoucher Int     @map("id_voucher")
+}
+
+model Order {
+  id           Int            @id @default(autoincrement())
+  date         DateTime       @default(now()) @map("date")
+  totalPrice   Int            @map("total_price")
+  user         User           @relation(fields: [idUser], references: [id])
+  idUser       Int            @map("id_user")
+  orderVoucher OrderVoucher[]
+}
+
+model OrderVoucher {
+  id            Int     @id @default(autoincrement())
+  Order         Order   @relation(fields: [idOrder], references: [id])
+  idOrder       Int     @map("id_order")
+  Voucher       Voucher @relation(fields: [idVoucher], references: [id])
+  idVoucher     Int     @map("id_voucher")
+  codeGenerated String  @db.VarChar(128)
+  price         Int
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique @db.VarChar(30)
+  password  String    @db.VarChar(80)
+  salt      String    @db.VarChar(32)
+  email     String    @unique @db.VarChar(30)
+  role      String    @default("customer")@db.VarChar(20)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  name      String?   @db.VarChar(30)
+  surname   String?   @db.VarChar(30)
+  phone     String?   @db.VarChar(15)
+  address   String?   @db.VarChar(150)
+  Order     Order[]
+}
