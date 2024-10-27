@@ -16,53 +16,42 @@ class AuthService{
    }
    
    async register(username, password, email){
-      const{logLabel} = this;
       try{
          let idUser = null;
-         let userDO = await this.userRepo.findByUsername(username);
-         if(userDO!=null)
-            throw new Error(`User "${username}" already exists`);
-         let userObj = User
+         let userObj = await this.userRepo.findByUsername(username);
+         if(userObj!=null)
+            throw new Error(`user '${username}' already exists`);
          const {hash, salt} = computeSaltedHash(password);
          userObj = new User(null, username, hash, salt, email);
          idUser = await this.userRepo.create(userObj);
          return idUser;
       }catch(err){
-         logger.error(`${logLabel} - Error to create user '${username}': ${err.message}`);
          throw err;
       }
    }
 
    async login(username, password){
       const{logLabel} = this;
-      //const logPrefix = `${logLabel} - ${idReq}`;
       try{
          let token = null;
-         //
-         token = jwt.sign(
-            {userId: "id_123", role: "admin"}, 'your-secret-key', {expiresIn: '1h'}
-         );
-         return token;
-         //
-         let userObj = await this.userRepo.getUser(idReq, username);
+         let userObj = await this.userRepo.findByUsername(username);
          if(userObj==null)
-            throw new Error(`User '${username}' not found`);
+            throw new Error(`user '${username}' not found`);
          let hashedPassStored = userObj.password;
          let saltStored = userObj.salt;
          let hashedPass = computeHash(password, saltStored);
          if(hashedPass==hashedPassStored){
             token = jwt.sign(
-               {userId: userObj.id}, 'your-secret-key', {expiresIn: '1h'}
+               {idUser: userObj.id, role: userObj.role}, 'your-secret-key', {expiresIn: '1h'}
             );
-            //await this.authRepo.saveSession(userObj.id, token);
          }else
             throw new Error(`username or password invalid`);
-         logger.error(`Login successfully for user with id ${id}. Token: ${token}`);
+         logger.info(`User ${userObj.id} successfully logged. Token: ${token}`);
          
          return token;
 
       }catch(err){
-         logger.error(`${logPrefix} - Error to login: ${err.message}`);
+         logger.error(`${logLabel} - Error to login: ${err.message}`);
          throw err;
       }
    }

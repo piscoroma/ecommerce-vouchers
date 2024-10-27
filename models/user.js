@@ -3,43 +3,22 @@
 **/
 
 class User{
-   constructor(username, password, salt, email,
+   constructor(id, username, password, salt, email,
       role=null, createdAt=null, updatedAt=null, 
       name=null, surname=null, phone=null, address=null){
 
+      this.id = id;
       this.username = username;
       this.password = password;
       this.salt = salt;
       this.email = email;
-      if(role!=null)
-         this.role = role;
-      if(createdAt!=null)
-         this.createdAt = createdAt;
-      if(updatedAt!=null)
-         this.updatedAt = updatedAt;
-      if(name!=null)
-         this.name = name;
-      if(surname!=null)   
-         this.surname = surname;
-      if(phone!=null)
-         this.phone = phone;
-      if(address!=null)
-         this.address = address;
-   }
-
-   fromObject(obj){
-      this.id = obj.id;
-      this.username = obj.username;
-      this.password = obj.password;
-      this.salt = obj.salt;
-      this.email = obj.email;
-      this.role = obj.role;
-      this.createdAt = obj.createdAt;
-      this.updatedAt = obj.updatedAt;
-      this.name = obj.name;
-      this.surname = obj.surname;
-      this.phone = obj.phone;
-      this.address = obj.address;
+      this.role = role;
+      this.createdAt = createdAt;
+      this.updatedAt = updatedAt;
+      this.name = name;
+      this.surname = surname;
+      this.phone = phone;
+      this.address = address;
    }
 
    validateData(){
@@ -55,8 +34,7 @@ class User{
 
    toJson(){
       let obj = {
-         "id": this.id,
-         "user": this.user,
+         "username": this.username,
          "email": this.email,
          "role": this.role,
          "name": this.user,

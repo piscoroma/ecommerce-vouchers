@@ -2,6 +2,7 @@
  * @author Giuseppe Piscopo
 **/
 
+const logger = require('../logger');
 const { computeHash, computeSaltedHash } = require('../utils/hasher');
 
 
@@ -10,46 +11,22 @@ class UserService{
       this.logLabel = "[user-service]";
       this.userRepo = userRepo;
    }
-   
-   /*async createUser(username, password, email){
-      const{logger, logLabel} = this;
-      const logPrefix = `${logLabel} - ${idReq}`;
-      try{
-         let idUser = null;
-         let userObj = await this.userRepo.getUser(idReq, username);
-         if(userObj!=null)
-            throw new Error(`User "${username}" already exists`);
-         const {hash, salt} = computeSaltedHash(password);
-         idUser = await this.userRepo.createUser(
-            idReq, username, hash, salt, email
-         );
-         return idUser;
-      }catch(err){
-         console.log(`${logPrefix} - Error to create user '${username}': ${err.message}`);
-         throw err;
-      }
-   }*/
 
-   async updateUser(idUser, newUsername=null, newPassword=null, 
-      newName=null, newSurname=null, newPhone=null, newAddress=null){
-         const{logger, logLabel} = this;
-         const logPrefix = `${logLabel} - ${idReq}`;
+   async updateUser(idUser, newPassword=null, newName=null, 
+      newSurname=null, newPhone=null, newAddress=null){
+         const{logLabel} = this;
          try{
-            let userObj = await this.userRepo.getUserById(idReq, idUser);
+            let userObj = await this.userRepo.findById(idUser);
             if(userObj==null)
-               throw new Error(`No user found with id ${idUser}`);
+               throw new Error(`no user found with id ${idUser}`);
             let isChanged = false;
-            if(newUsername!=null && newUsername!=userObj.username){
-               userObj.username = newUsername;
-               isChanged = true;
-            }
-            if(newCredential!=null){
+            if(newPassword!=null){
                let saltStored = userObj.salt;
-               let hashedPassStored = userObj.credential;
+               let hashedPassStored = userObj.password;
                let newPasswordHashed = computeHash(newPassword, saltStored);
                if(newPasswordHashed!=hashedPassStored){
-                  const {hash, salt} = computeSaltedHash(newCredential);
-                  userObj.credential = hash;
+                  const {hash, salt} = computeSaltedHash(newPassword);
+                  userObj.password = hash;
                   userObj.salt = salt;
                   isChanged = true;
                }
@@ -71,54 +48,48 @@ class UserService{
                isChanged = true;
             }
             if(isChanged){
-               await this.userRepo.updateUser(idReq, idUser, userObj);
+               await this.userRepo.update(userObj);
             }
          }catch(err){
-            console.log(`${logPrefix} - Error to update user with id: ${err.message}`);
+            logger.error(`${logLabel} - Error to update user with id: ${err.message}`);
             throw err;
          }
    }
 
-   async getUsers(role=null){
-      const{logger, logLabel} = this;
-      const logPrefix = `${logLabel} - ${idReq}`;
+   async getUsers(filters){
+      const{logLabel} = this;
       try{
-         let userObjList = await this.userRepo.getUsers(idReq, role);
+         let userObjList = await this.userRepo.findAll(filters);
          return userObjList; 
 
       }catch(err){
-         console.log(`${logPrefix} - Error to get users list: ${err.message}`);
+         logger.error(`${logLabel} - Error to get users list: ${err.message}`);
          throw err;
       }
    }
 
-   async getUser(idUser=null, user=null, email=null){
-      const{logger, logLabel} = this;
-      const logPrefix = `${logLabel} - ${idReq}`;
+   async getUser(idUser){
+      const{logLabel} = this;
       try{
-         let userObj = await this.userRepo.getUser(
-            idReq, idUser, user, email
-         );
+         let userObj = await this.userRepo.findById(idUser);
          if(userObj==null)
-            throw new Error(`No user found`);
+            throw new Error(`no user found`);
          return userObj;
-
       }catch(err){
-         console.log(`${logPrefix} - Error to get user: ${err.message}`);
+         logger.error(`${logLabel} - Error to get user with id ${idUser}: ${err.message}`);
          throw err;
       }
    }
 
    async deleteUser(idUser){
-      const{logger, logLabel} = this;
-      const logPrefix = `${logLabel} - ${idReq}`;
+      const{logLabel} = this;
       try{
-         let userObj = await this.userRepo.getUser(idReq, idUser);
+         let userObj = await this.userRepo.findById(idUser);
          if(userObj==null)
-            throw new Error(`No user found with id ${idUser}`);
-         await this.userRepo.deleteUser(idReq, idUser);
+            throw new Error(`no user found with id ${idUser}`);
+         await this.userRepo.delete(idUser);
       }catch(err){
-         console.log(`${logPrefix} - Error to delete user with id ${idUser}: ${err.message}`);
+         logger.error(`${logLabel} - Error to delete user with id ${idUser}: ${err.message}`);
          throw err;
       }
    }

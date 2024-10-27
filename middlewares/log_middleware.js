@@ -11,7 +11,7 @@ const logRequests = (req, res, next) => {
    
    res.send = function (body) {
       const responseTime = Date.now() - currentTime;
-      logger.info(`${req.hostname} ${req.method} ${req.method} ${res.statusCode} ${responseTime}ms`);
+      logger.info(`${req.hostname} ${req.method} ${res.statusCode} ${responseTime}ms`);
       originalSend.call(this, body);
    };
 

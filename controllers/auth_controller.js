@@ -6,7 +6,7 @@ const logger = require('../logger');
 
 class AuthController{
    constructor({authService}){
-      this.logLabel = "[auth-service]";
+      this.logLabel = "[auth-controller]";
       this.authService = authService;
    }
    
@@ -19,20 +19,25 @@ class AuthController{
             throw new Error(`Error to validate input data`);
 
          await this.authService.register(username, password, email);
+
+         res.status(200).send("Registration completed");
          
       }catch(err){
-         logger.error(`${logLabel} - Registration failed: ${err.message}`);
-         res.status(500).json({ error: 'Registration failed' });
+         const errMsg = `Registration failed: ${err.message}`;
+         logger.error(`${logLabel} - ${errMsg}`);
+         res.status(500).json({ error: errMsg });
       }
    }
   
    login = async (req, res, next) => {
       try{
-         let body = req.body;
-         const token = await this.authService.login(
-            body["username"],
-            body["password"]
-         );
+         const {username, password} = req.body;
+
+         if(!username || !password)
+            throw new Error(`Error to validate input data`);
+
+         const token = await this.authService.login(username, password);
+
          res.status(200).json({token});
       }catch(err){
          res.status(500).json({ error: 'Login failed' });

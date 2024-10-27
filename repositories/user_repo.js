@@ -15,7 +15,17 @@ class UserRepo {
       const{logLabel} = this;
       try{
          const user = await prisma.user.create({
-            data: userObj
+            data: {
+               username: userObj.username,
+               password: userObj.password,
+               salt: userObj.salt,
+               email: userObj.email,
+               name: userObj.name,
+               surname: userObj.surname,
+               phone: userObj.phone,
+               address: userObj.address
+               
+            }
          });
          return user.id;
       }catch (err) {
@@ -24,25 +34,23 @@ class UserRepo {
       }
    }
 
-   /*async create(idReq, username, hashedPass, salt, email){
-      const{logger, logLabel} = this;
-      const logPrefix = `${logLabel} - ${idReq}`;
-      try{
-         let idUser = null;
-         return idUser;
-      }catch (err) {
-         logger.error(`${logPrefix} - Error on createUser query: ${err.message}`);
-         throw err;
-      }
-   }*/
-
-   async findAll(role=null){
+   async findAll(filters){
       const{logLabel} = this;
       try{
-         //let userObjList = [];
-         //return userObjList;
-         const users = await prisma.user.findMany();
-         return users;
+         let userObjList = [];
+         const users = await prisma.user.findMany({
+            where: {
+               AND: [
+                  {role: filters.role},
+                  {username: filters.username}
+               ]
+            }
+         });
+         for(const user of users){
+            let userObj = this._parseUser(user);
+            userObjList.push(userObj);
+         }
+         return userObjList;
       }catch (err) {
          logger.error(`${logLabel} - Error on findAll query: ${err.message}`);
          throw err;
@@ -52,48 +60,86 @@ class UserRepo {
    async findByUsername(username){
       const{logLabel} = this;
       try{
+         let userObj = null;
          const user = await prisma.user.findUnique({
             where: {
                username: username
             }
          });
-         return user;
+         if(user!=null)
+            userObj = this._parseUser(user);
+         return userObj;
       }catch (err) {
          logger.error(`${logLabel} - Error on findByUsername query: ${err.message}`);
          throw err;
       }
    }
 
-   async update(idReq, idUser, userObj){
-      const{logger, logLabel} = this;
-      const logPrefix = `${logLabel} - ${idReq}`;
+   async findById(idUser){
+      const{logLabel} = this;
       try{
+         let userObj = null;
+         const user = await prisma.user.findUnique({
+            where: {
+               id: idUser
+            }
+         });
+         if(user!=null)
+            userObj = this._parseUser(user);
+         return userObj;
       }catch (err) {
-         logger.error(`${logPrefix} - Error on update query: ${err.message}`);
+         logger.error(`${logLabel} - Error on findById query: ${err.message}`);
          throw err;
       }
    }
 
-   async delete(idReq, idUser){
-      const{logger, logLabel} = this;
-      const logPrefix = `${logLabel} - ${idReq}`;
+   async update(userObj){
+      const{logLabel} = this;
       try{
+         const user = await prisma.user.update({
+            where: {
+               id: userObj.id
+            },
+            data: {
+               password: userObj.password,
+               salt: userObj.salt,
+               name: userObj.name,
+               surname: userObj.surname,
+               phone: userObj.phone,
+               address: userObj.address
+            }
+         });
+         return user;
       }catch (err) {
-         logger.error(`${logPrefix} - Error on delete query: ${err.message}`);
+         logger.error(`${logLabel} - Error on update query: ${err.message}`);
+         throw err;
+      }
+   }
+
+   async delete(idUser){
+      const{logLabel} = this;
+      try{
+         await prisma.user.delete({
+            where: {
+               id: idUser
+            }
+         });
+      }catch (err) {
+         logger.error(`${logLabel} - Error on delete query: ${err.message}`);
          throw err;
       }
    }
 
    _parseUser(user){
       let userObj = new User(
-         user['id_user'],
+         user['id'],
          user['username'],
          user['password'],
          user['salt'],
          user['email'],
          user['role'],
-         user['creation_date'],
-         user['update_date'],
+         user['createdAt'],
+         user['updatedAt'],
          user['name'],
          user['surname'],
          user['phone'],

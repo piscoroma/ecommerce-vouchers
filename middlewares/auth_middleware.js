@@ -11,7 +11,7 @@ function authenticate(req, res, next) {
    try{
       token = token.replace('Bearer ', '');
       const decoded = jwt.verify(token, 'your-secret-key');
-      req.userId = decoded.userId;
+      req.idUser = Number(decoded.idUser);
       req.role = decoded.role;
       next();
    } catch (error) {
