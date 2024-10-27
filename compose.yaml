@@ -1,0 +1,42 @@
+services:
+  mysql:
+    container_name: prisma_db
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=$MYSQLDB_ROOT_PASSWORD
+      - MYSQL_DATABASE=$MYSQLDB_DATABASE
+    stdin_open: false
+    tty: false
+    ports:
+      - $MYSQLDB_LOCAL_PORT:$MYSQLDB_DOCKER_PORT
+    volumes:
+      - mysql:/var/lib/mysql
+    networks:
+      - custom-networks
+
+  app-node:
+    container_name: ecommerce_vouchers
+    build: .
+    depends_on:
+      - mysql
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=$DATABASE_URL
+      - JWT_SECRET_KEY=$JWT_SECRET_KEY
+    stdin_open: false
+    tty: false
+    ports:
+      - $NODE_LOCAL_PORT:$NODE_DOCKER_PORT
+    networks:
+      - custom-networks
+
+volumes:
+  mysql:
+    driver: local
+
+networks:
+  custom-networks:
+    driver: bridge
+
+
