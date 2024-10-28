@@ -3,6 +3,7 @@
 **/
 
 const logger = require('../logger');
+const endpointSecret = process.env.STRIPE_ENDPOINT_SECRET
 
 class OrderController{
    constructor({orderService}){
@@ -31,15 +32,41 @@ class OrderController{
             return res.status(400).send(`Error to validate input data: ${err.message}`);
          }
 
-         let idOrder = await this.orderService.addOrder(idUser, vouchersSelected);
+         let respData = await this.orderService.addOrder(idUser, vouchersSelected);
 
-         res.status(200).json({"id": idOrder});
+         res.status(200).json({respData});
 
       }catch(err){
          const errMsg = `Error to add order: ${err.message}`;
          logger.error(`${logLabel} - ${errMsg}`);
          res.status(500).json({error: errMsg});
       }
+   }
+
+   webhook = async (req, res) => {
+      const sig = request.headers['stripe-signature'];
+   
+      let event;
+      try {
+         event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+      } catch (err) {
+         res.status(400).send(`Webhook Error: ${err.message}`);
+         return;
+      }
+   
+      // Handle the event
+      logger.info(event.type);
+   
+      if (event.type === 'checkout.session.completed') {
+         // Set the order as valid
+         // return the idOrder
+      }
+      else{
+         // Remove the order
+      }
+   
+      // Return a 200 response to acknowledge receipt of the event
+      res.send();
    }
 
    getOrder = async (req, res, next) => {

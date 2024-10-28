@@ -5,11 +5,9 @@
 const logger = require('../logger');
 const Order = require("../models/order");
 const OrderVoucher = require("../models/order_voucher");
-const Voucher = require('../models/voucher');
 const User = require('../models/user');
 
 const { prisma } = require('../prisma');
-const { triggerAsyncId } = require('async_hooks');
 
 class OrderRepo{
    constructor(){

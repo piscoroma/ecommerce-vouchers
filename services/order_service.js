@@ -5,6 +5,7 @@
 const logger = require('../logger');
 const OrderVoucher = require("../models/order_voucher");
 const Order = require("../models/order");
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -14,12 +15,13 @@ class OrderService{
       this.userRepo = userRepo;
       this.voucherRepo = voucherRepo;
       this.orderRepo = orderRepo;
+      this.isStripeEnabled = ((process.env.STRIPE_ENABLED === 'true') ? true : false);
    }
 
    async addOrder(idUser, vouchersSelected){
       const{logLabel} = this;
       try{
-         let idOrder = null;
+         let respData = null;
 
          // Validate user
          let userObj = await this.userRepo.findById(idUser);
@@ -32,6 +34,7 @@ class OrderService{
          }
 
          // Validate vouchers
+         let lineItems = [];
          let orderVoucherObjList = [];
          let totalPrice = 0;
          for(const voucher of vouchersSelected){
@@ -46,6 +49,21 @@ class OrderService{
 
             let qty = Number(voucher["qty"]);
 
+            if(this.isStripeEnabled){
+               // create line_items
+               lineItems.push({
+                  "price_data": {
+                     "currency": "eur",
+                     "product_data": {
+                        "name": voucherObj.name,
+                        "description": voucherObj.description,
+                     },
+                     "unit_amount": price * 100,
+               },
+               "quantity": qty,
+               });
+            }
+
             for(let i=0; i<qty; i++){
                let codeGenerated = uuidv4();
                let orderVoucherObj = new OrderVoucher(
@@ -56,14 +74,34 @@ class OrderService{
             }
          }
          
-         // Add order
+         let session = null;
+         if(this.isStripeEnabled){
+               session = await stripe.checkout.sessions.create({
+               mode: 'payment',
+               line_items: lineItems,
+               customer_email: userObj.email,
+               success_url: `https://example.com/success`,
+               cancel_url: `https://example.com/error`,
+            });
+            //res.redirect(303, session.url);
+         }
+
+         // Save order to database
          let orderObj = new Order(
             null, null, totalPrice,
             userObj, orderVoucherObjList
          );
-         idOrder = await this.orderRepo.create(orderObj);
+         let idOrder = await this.orderRepo.create(orderObj);
+         
+         logger.info(`Order created`);
 
-         return idOrder;
+         respData = {
+            "idOrder": idOrder
+         }
+         if(this.isStripeEnabled)
+            respData["urlSession"] = session.url;
+         
+         return respData;
 
       }catch(err){
          console.log(`${logLabel} - Error to perform order: ${err.message}`);
